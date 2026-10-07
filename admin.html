@@ -67,7 +67,6 @@
             border-color: transparent;
         }
 
-        /* 加载状态 */
         .table-loading {
             text-align: center;
             padding: 40px 0;
@@ -101,10 +100,21 @@
             cursor: pointer;
         }
 
-        /* 让操作按钮更紧凑 */
         .btn-sm {
             padding: 4px 12px !important;
             font-size: 0.8rem !important;
+        }
+
+        /* 数据源提示徽标 */
+        .source-badge {
+            display: inline-block;
+            font-size: 0.7rem;
+            padding: 2px 8px;
+            border-radius: 10px;
+            background: rgba(124,58,237,0.15);
+            color: var(--accent-light, #a78bfa);
+            margin-left: 8px;
+            vertical-align: middle;
         }
 
         @media (max-width: 600px) {
@@ -117,10 +127,10 @@
     <!-- 导航栏 -->
     <nav class="navbar" id="navbar">
         <div class="container">
-            <a href="/shop.html" class="brand"><span class="highlight">IceCloud</span> &amp; Plux</a>
+            <a href="/shop.html" class="brand"><span class="highlight">Gt</span>Plux</a>
             <div class="nav-links">
-                <a href="/shop.html">商店</a>
-                <a href="/admin.html">管理</a>
+                <a href="/index">首页</a>
+                <a href="/shop">商店</a>
                 <span class="nav-divider"></span>
                 <div class="theme-toggle" id="themeToggle" role="button" tabindex="0" aria-label="切换主题">
                     <span class="toggle-track"><span class="toggle-thumb"></span></span>
@@ -132,10 +142,10 @@
     <!-- 登录界面 -->
     <section class="login-section" id="loginSection">
         <div class="login-box">
-            <h2>🔐 管理员登录</h2>
-            <p>请输入您的 GitHub Personal Access Token（需 <code>repo</code> 权限）</p>
-            <input type="password" id="tokenInput" placeholder="ghp_xxxxxxxxxxxx">
-            <button class="btn btn-primary" id="loginBtn" style="width:100%;">登录后台</button>
+            <h2>🔐 Admin Login</h2>
+            <p>Please input the admin password to login the manager console</p>
+            <input type="password" id="tokenInput" placeholder="Admin Password">
+            <button class="btn btn-primary" id="loginBtn" style="width:100%;">Sign in</button>
             <div class="error-msg" id="loginError"></div>
         </div>
     </section>
@@ -160,7 +170,7 @@
         <!-- 面板1: 产品管理 -->
         <div id="panel-products" class="panel active">
             <div class="action-bar">
-                <h2 style="font-size:1.3rem;">产品列表</h2>
+                <h2 style="font-size:1.3rem;">产品列表 <span class="source-badge" id="productSourceBadge"></span></h2>
                 <button class="btn btn-primary" onclick="openProductModal()">+ 添加产品</button>
             </div>
             <div class="card">
@@ -176,7 +186,7 @@
         <!-- 面板2: 许可证管理 -->
         <div id="panel-licenses" class="panel">
             <div class="action-bar">
-                <h2 style="font-size:1.3rem;">许可证列表</h2>
+                <h2 style="font-size:1.3rem;">许可证列表 <span class="source-badge" id="licenseSourceBadge"></span></h2>
                 <button class="btn btn-primary" onclick="openLicenseModal()">+ 添加许可证</button>
             </div>
             <div class="card">
@@ -192,7 +202,7 @@
         <!-- 面板3: 插件管理 -->
         <div id="panel-plugins" class="panel">
             <div class="action-bar">
-                <h2 style="font-size:1.3rem;">插件列表</h2>
+                <h2 style="font-size:1.3rem;">插件列表 <span class="source-badge" id="pluginSourceBadge"></span></h2>
                 <button class="btn btn-primary" onclick="openPluginModal()">+ 添加插件</button>
             </div>
             <div class="sub-tabs" id="pluginSubTabs">
@@ -224,7 +234,7 @@
 
     <footer class="footer">
         <div class="container">
-            <p>Made with <span class="heart">❤️</span> by IceCloud &amp; Plux Dev</p>
+            <p>Made with <span class="heart">❤️</span> by GtPlux</p>
         </div>
     </footer>
 
@@ -236,12 +246,42 @@
     const GITHUB_REPO  = 'IceCloudPlux-Website';
     const GITHUB_BRANCH = 'main';
     const DATA_DIR = '_data';
-    const CACHE_TTL = 5 * 60 * 1000;    // 数据缓存 5 分钟
+    const CACHE_TTL = 5 * 60 * 1000;    // 数据内存缓存 5 分钟
     const TOKEN_TTL = 30 * 1000;        // Token 验证缓存 30 秒
     const REQUEST_TIMEOUT = 15000;       // 请求超时 15 秒
 
     /* ============================================================
-       工具函数（内联，不再依赖 common.js）
+       加速数据源列表（按优先级排序）
+       ============================================================ */
+    const DATA_SOURCES = [
+        {
+            name: 'jsDelivr-Fastly',
+            type: 'raw',
+            url: (file) => `https://fastly.jsdelivr.net/gh/${GITHUB_OWNER}/${GITHUB_REPO}@${GITHUB_BRANCH}/${DATA_DIR}/${file}.json`,
+            cached: true   // 有 CDN 缓存
+        },
+        {
+            name: 'jsDelivr-Gcore',
+            type: 'raw',
+            url: (file) => `https://gcore.jsdelivr.net/gh/${GITHUB_OWNER}/${GITHUB_REPO}@${GITHUB_BRANCH}/${DATA_DIR}/${file}.json`,
+            cached: true
+        },
+        {
+            name: 'gh-proxy',
+            type: 'raw',
+            url: (file) => `https://gh-proxy.com/https://raw.githubusercontent.com/${GITHUB_OWNER}/${GITHUB_REPO}/${GITHUB_BRANCH}/${DATA_DIR}/${file}.json`,
+            cached: false
+        },
+        {
+            name: 'GitHub-API',
+            type: 'api',
+            url: (file) => `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${DATA_DIR}/${file}.json?ref=${GITHUB_BRANCH}`,
+            cached: false
+        }
+    ];
+
+    /* ============================================================
+       工具函数
        ============================================================ */
     function getToken() { return localStorage.getItem('gh_token') || ''; }
     function setToken(t) { localStorage.setItem('gh_token', t); }
@@ -272,7 +312,6 @@
         return div.innerHTML;
     }
 
-    // 简单 base64 混淆（如果原 common.js 的算法不同，请替换为一致实现）
     function encodeObscure64(plain) {
         return btoa(unescape(encodeURIComponent(plain)));
     }
@@ -284,9 +323,6 @@
         }
     }
 
-    /* ============================================================
-       fetch 带超时
-       ============================================================ */
     function fetchWithTimeout(url, options = {}) {
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT);
@@ -294,48 +330,114 @@
             .finally(() => clearTimeout(timeoutId));
     }
 
+    // 严格 UTF-8 解码
+    function decodeUtf8(arrayBuffer) {
+        return new TextDecoder('utf-8', { fatal: false }).decode(arrayBuffer);
+    }
+
     /* ============================================================
-       数据层：读取 + 缓存
+       数据层：多源加速读取
        ============================================================ */
-    const _dataCache = {};   // { name: { data, time, sha } }
+    const _dataCache = {};   // { name: { data, time, sha, source } }
 
     async function loadData(name, token, forceRefresh = false) {
         const now = Date.now();
         const cached = _dataCache[name];
         if (!forceRefresh && cached && (now - cached.time < CACHE_TTL)) {
+            updateSourceBadge(name, cached.source);
             return cached.data;
         }
 
-        const url = `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${DATA_DIR}/${name}.json?ref=${GITHUB_BRANCH}`;
-        const res = await fetchWithTimeout(url, {
-            headers: { 'Authorization': `token ${token}` }
-        });
-
-        if (res.status === 404) {
-            // 文件不存在，返回空数组并缓存
-            _dataCache[name] = { data: [], time: now, sha: null };
-            return [];
-        }
-        if (!res.ok) {
-            throw new Error(`HTTP ${res.status}`);
+        // 强制刷新时，把带缓存的 jsDelivr 源放到最后（避免拿到旧数据）
+        let sources = DATA_SOURCES.slice();
+        if (forceRefresh) {
+            sources = sources.filter(s => !s.cached).concat(sources.filter(s => s.cached));
         }
 
-        const json = await res.json();
-        const buffer = await (await fetch(json.download_url, { cache: 'no-cache' })).arrayBuffer();
-        const text = new TextDecoder('utf-8').decode(buffer);
-        const data = JSON.parse(text);
+        let lastError = null;
+        for (const source of sources) {
+            try {
+                const url = source.url(name);
+                // 加时间戳参数，避免浏览器本地缓存（jsDelivr 服务端缓存不受影响）
+                const fetchUrl = url + (url.includes('?') ? '&' : '?') + '_t=' + now;
 
-        _dataCache[name] = { data, time: now, sha: json.sha };
-        return data;
+                const headers = {};
+                if (source.type === 'api') {
+                    headers['Authorization'] = `token ${token}`;
+                }
+
+                const res = await fetchWithTimeout(fetchUrl, { headers, cache: 'no-cache' });
+
+                if (res.status === 404) {
+                    // 只有 GitHub API 能确认文件真的不存在
+                    if (source.type === 'api') {
+                        _dataCache[name] = { data: [], time: now, sha: null, source: '空文件' };
+                        updateSourceBadge(name, '空文件');
+                        return [];
+                    }
+                    // 其他源的 404 可能是缓存未同步，继续尝试
+                    continue;
+                }
+                if (!res.ok) {
+                    lastError = new Error(`${source.name} HTTP ${res.status}`);
+                    continue;
+                }
+
+                let data;
+                let sha = null;
+
+                if (source.type === 'api') {
+                    // GitHub API 返回 base64 内容
+                    const json = await res.json();
+                    sha = json.sha;
+                    const cleanBase64 = (json.content || '').replace(/\s/g, '');
+                    const text = decodeURIComponent(escape(atob(cleanBase64)));
+                    data = JSON.parse(text);
+                } else {
+                    // jsDelivr / 代理直接返回文件内容
+                    const buffer = await res.arrayBuffer();
+                    const text = decodeUtf8(buffer);
+                    data = JSON.parse(text);
+                }
+
+                console.log(`[数据源] ${name} 加载成功 → ${source.name}`);
+                _dataCache[name] = { data, time: now, sha, source: source.name };
+                updateSourceBadge(name, source.name);
+                return data;
+
+            } catch (err) {
+                console.warn(`[数据源] ${name} 使用 ${source.name} 失败:`, err.message);
+                lastError = err;
+                continue;
+            }
+        }
+
+        throw lastError || new Error('所有数据源均无法访问');
     }
 
+    // 显示当前使用的数据源
+    function updateSourceBadge(name, sourceName) {
+        const map = {
+            'products': 'productSourceBadge',
+            'licenses': 'licenseSourceBadge',
+            'icecloud_plugins': 'pluginSourceBadge',
+            'plux_plugins': 'pluginSourceBadge',
+            'special_plugins': 'pluginSourceBadge'
+        };
+        const el = document.getElementById(map[name]);
+        if (el) el.textContent = sourceName ? `来源: ${sourceName}` : '';
+    }
+
+    /* ============================================================
+       数据层：写入（必须走 GitHub API）
+       ============================================================ */
     async function saveData(name, data, token, message) {
-        const url = `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${DATA_DIR}/${name}.json`;
+        const apiUrl = `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${DATA_DIR}/${name}.json`;
         let sha = _dataCache[name]?.sha || null;
 
-        // 如果没有缓存 sha，先去获取
+        // 如果没有 sha，先去 API 获取
         if (!sha) {
-            const getRes = await fetchWithTimeout(`${url}?ref=${GITHUB_BRANCH}`, {
+            const getRes = await fetchWithTimeout(`${apiUrl}?ref=${GITHUB_BRANCH}`, {
                 headers: { 'Authorization': `token ${token}` }
             });
             if (getRes.ok) {
@@ -351,7 +453,7 @@
         };
         if (sha) body.sha = sha;
 
-        const putRes = await fetchWithTimeout(url, {
+        const putRes = await fetchWithTimeout(apiUrl, {
             method: 'PUT',
             headers: {
                 'Authorization': `token ${token}`,
@@ -366,12 +468,31 @@
         }
 
         const result = await putRes.json();
-        // 更新缓存
+
+        // 更新内存缓存
         _dataCache[name] = {
             data: data,
             time: Date.now(),
-            sha: result.content?.sha || null
+            sha: result.content?.sha || null,
+            source: '本地保存'
         };
+        updateSourceBadge(name, '本地保存');
+
+        // 异步清理 jsDelivr CDN 缓存（不阻塞 UI）
+        purgeJsDelivrCache(name);
+    }
+
+    /* ============================================================
+       清理 jsDelivr 缓存
+       ============================================================ */
+    function purgeJsDelivrCache(name) {
+        const urls = [
+            `https://purge.jsdelivr.net/gh/${GITHUB_OWNER}/${GITHUB_REPO}@${GITHUB_BRANCH}/${DATA_DIR}/${name}.json`,
+            `https://purge.jsdelivr.net/gh/${GITHUB_OWNER}/${GITHUB_REPO}/${DATA_DIR}/${name}.json`
+        ];
+        urls.forEach(url => {
+            fetch(url, { mode: 'no-cors' }).catch(() => {});
+        });
     }
 
     /* ============================================================
@@ -403,8 +524,6 @@
     let licensesData = [];
     let pluginsData = [];
     let currentPluginFile = 'icecloud_plugins';
-
-    // 记录哪些 tab 数据已加载
     const loaded = { products: false, licenses: false, plugins: {} };
 
     /* ============================================================
@@ -454,8 +573,6 @@
         loginError.textContent = '';
         document.getElementById('loginSection').style.display = 'none';
         document.getElementById('adminSection').style.display = 'block';
-
-        // 只加载当前 tab（产品）数据
         await loadProductsIfNeeded();
     }
 
@@ -463,7 +580,6 @@
         if (confirm('确定退出登录吗？')) {
             clearToken();
             token = '';
-            // 清理缓存
             for (const key in _dataCache) delete _dataCache[key];
             loaded.products = false;
             loaded.licenses = false;
@@ -489,7 +605,7 @@
     })();
 
     /* ============================================================
-       标签页切换（按需加载）
+       标签页切换
        ============================================================ */
     document.querySelectorAll('.tab-btn').forEach(btn => {
         btn.addEventListener('click', function() {
@@ -499,7 +615,6 @@
             const panel = this.dataset.panel;
             document.getElementById('panel-' + panel).classList.add('active');
 
-            // 按需加载
             if (panel === 'products') loadProductsIfNeeded();
             else if (panel === 'licenses') loadLicensesIfNeeded();
             else if (panel === 'plugins') loadPluginsIfNeeded();
@@ -536,7 +651,6 @@
         const tbody = document.getElementById('licenseTableBody');
         tbody.innerHTML = `<tr><td colspan="7" class="table-loading"><div class="spinner"></div><div>加载中…</div></td></tr>`;
         try {
-            // 许可证需要产品数据来显示产品名，所以先确保产品加载
             if (!loaded.products) productsData = await loadData('products', token);
             licensesData = await loadData('licenses', token, force);
             loaded.licenses = true;
@@ -560,7 +674,6 @@
         }
     }
 
-    // 强制刷新所有已加载的数据
     async function refreshAll() {
         const activePanel = document.querySelector('.tab-btn.active').dataset.panel;
         if (activePanel === 'products') await loadProductsIfNeeded(true);
@@ -711,7 +824,6 @@
             renderProductTable();
         } catch (err) {
             alert('删除失败：' + err.message);
-            // 回滚
             loadProductsIfNeeded(true);
         }
     }
@@ -864,7 +976,7 @@
     });
 
     /* ============================================================
-       暴露到全局（供 HTML onclick 调用）
+       暴露到全局
        ============================================================ */
     window.login = login;
     window.logout = logout;
