@@ -2,11 +2,11 @@
   {
     "id": 1,
     "name": "BedWarsHeyPixel",
-    "description": "一个好用、高配置度、灵活的起床战争二次开发版本插件",
-    "version": "26.9",
+    "version": "26.9.1",
     "mc_version": "1.8 - 1.21.4",
-    "date": "2026-09-26",
     "price": 16,
-    "buy_url": "https://afdian.com/item/fedde55e9e9811f1a73252540025c377"
+    "description": "一个好用、高配置度、灵活的起床战争二次开发版本插件",
+    "date": "2026-09-30",
+    "download_url": "https://afdian.com/item/fedde55e9e9811f1a73252540025c377"
   }
 ]
