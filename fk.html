@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IceCloud & Plux · 发送反馈</title>
+    <style>
+        :root {
+            --bg-primary: #0b0d15;
+            --bg-secondary: #131620;
+            --bg-card: rgba(255,255,255,0.04);
+            --bg-nav: rgba(11,13,21,0.0);
+            --text-primary: #e8eaf0;
+            --text-secondary: #9ca3af;
+            --text-muted: #6b7280;
+            --border-color: rgba(255,255,255,0.06);
+            --accent: #7c3aed;
+            --accent-light: #a78bfa;
+            --accent-gradient: linear-gradient(135deg, #7c3aed, #a855f7);
+            --shadow: 0 4px 24px rgba(0,0,0,0.4);
+            --nav-blur: 12px;
+            --radius: 16px;
+        }
+
+        [data-theme="light"] {
+            --bg-primary: #f8fafc;
+            --bg-secondary: #ffffff;
+            --bg-card: rgba(0,0,0,0.03);
+            --bg-nav: rgba(248,250,252,0.0);
+            --text-primary: #0f172a;
+            --text-secondary: #475569;
+            --text-muted: #94a3b8;
+            --border-color: rgba(0,0,0,0.06);
+            --accent: #7c3aed;
+            --accent-light: #8b5cf6;
+            --shadow: 0 4px 24px rgba(0,0,0,0.08);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.6;
+            transition: background 0.3s, color 0.3s;
+        }
+
+        a { color: inherit; text-decoration: none; }
+        .container { max-width: 1200px; margin: 0 auto; padding: 0 24px; }
+
+        /* 导航栏 */
+        .navbar {
+            position: fixed; top: 0; left: 0; right: 0; z-index: 1000;
+            padding: 16px 0;
+            transition: background 0.3s, box-shadow 0.3s, border-color 0.3s;
+            background: var(--bg-nav);
+            border-bottom: 1px solid transparent;
+        }
+        .navbar.scrolled {
+            background: var(--bg-secondary);
+            border-bottom-color: var(--border-color);
+            box-shadow: 0 2px 20px rgba(0,0,0,0.1);
+        }
+        [data-theme="light"] .navbar.scrolled { background: rgba(255,255,255,0.85); backdrop-filter: blur(var(--nav-blur)); }
+        [data-theme="dark"] .navbar.scrolled { background: rgba(11,13,21,0.85); backdrop-filter: blur(var(--nav-blur)); }
+        .navbar .container { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; }
+        .brand { font-size: 1.3rem; font-weight: 700; color: var(--text-primary); display: flex; align-items: center; gap: 8px; }
+        .brand .highlight { color: var(--accent-light); }
+        .nav-links { display: flex; align-items: center; gap: 20px; font-size: 0.95rem; flex-wrap: wrap; }
+        .nav-links a { color: var(--text-secondary); transition: color 0.2s; font-weight: 500; }
+        .nav-links a:hover { color: var(--text-primary); }
+        .nav-divider { width: 1px; height: 24px; background: var(--border-color); }
+        .theme-toggle { display: flex; align-items: center; gap: 6px; cursor: pointer; user-select: none; font-size: 0.9rem; color: var(--text-secondary); }
+        .theme-toggle .toggle-track { width: 40px; height: 22px; border-radius: 30px; background: var(--border-color); position: relative; transition: background 0.3s; flex-shrink: 0; }
+        .theme-toggle .toggle-thumb { width: 18px; height: 18px; border-radius: 50%; background: white; position: absolute; top: 2px; left: 2px; transition: transform 0.3s, background 0.3s; box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
+        [data-theme="dark"] .theme-toggle .toggle-track { background: var(--accent); }
+        [data-theme="dark"] .theme-toggle .toggle-thumb { transform: translateX(18px); background: #fff; }
+
+        /* Hero */
+        .hero { padding: 120px 0 40px; text-align: center; }
+        .hero h1 { font-size: 2.5rem; font-weight: 800; }
+        .hero .highlight { background: var(--accent-gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+        .hero p { color: var(--text-secondary); margin-top: 8px; }
+
+        /* 反馈表单卡片 */
+        .feedback-wrapper {
+            max-width: 640px;
+            margin: 0 auto 60px;
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius);
+            padding: 32px;
+            box-shadow: var(--shadow);
+            transition: all 0.3s;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .form-group label {
+            font-weight: 600;
+            font-size: 0.95rem;
+            color: var(--text-primary);
+        }
+
+        .form-group label .required {
+            color: #ef4444;
+            margin-left: 4px;
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 12px 16px;
+            background: var(--bg-primary);
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            color: var(--text-primary);
+            font-size: 0.95rem;
+            outline: none;
+            transition: border-color 0.2s;
+            font-family: inherit;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            border-color: var(--accent);
+        }
+
+        .form-group select {
+            cursor: pointer;
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='%239ca3af' viewBox='0 0 16 16'%3E%3Cpath d='M7.247 11.14 2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 16px center;
+            padding-right: 40px;
+        }
+
+        .form-group textarea {
+            resize: vertical;
+            min-height: 120px;
+        }
+
+        .btn-submit {
+            width: 100%;
+            padding: 12px;
+            border: none;
+            border-radius: 30px;
+            background: var(--accent-gradient);
+            color: #fff;
+            font-weight: 700;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            box-shadow: 0 4px 20px rgba(124,58,237,0.35);
+        }
+
+        .btn-submit:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 32px rgba(124,58,237,0.5);
+        }
+
+        .btn-submit:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        /* 成功提示覆盖层 */
+        .success-overlay {
+            display: none;
+            text-align: center;
+            padding: 40px 20px;
+        }
+        .success-overlay.active {
+            display: block;
+        }
+        .success-icon {
+            font-size: 4rem;
+            margin-bottom: 16px;
+        }
+        .success-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 8px;
+            color: var(--text-primary);
+        }
+        .success-desc {
+            color: var(--text-secondary);
+            margin-bottom: 24px;
+        }
+        .btn-back {
+            display: inline-block;
+            padding: 10px 24px;
+            border-radius: 30px;
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+        .btn-back:hover {
+            border-color: var(--accent);
+        }
+
+        footer { padding: 32px 0; border-top: 1px solid var(--border-color); text-align: center; color: var(--text-muted); font-size: 0.9rem; margin-top: 48px; }
+        .footer .heart { color: #ef4444; }
+
+        @media (max-width: 768px) {
+            .navbar .container { flex-direction: column; align-items: stretch; }
+            .nav-links { justify-content: center; gap: 12px; font-size: 0.85rem; }
+            .nav-divider { display: none; }
+            .hero h1 { font-size: 2rem; }
+            .feedback-wrapper { padding: 24px 16px; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- 导航栏 -->
+    <nav class="navbar" id="navbar">
+        <div class="container">
+            <a href="/" class="brand"><span class="highlight">IceCloud</span>&nbsp;&amp;&nbsp;Plux</a>
+            <div class="nav-links">
+                <a href="/">首页</a>
+                <a href="/shop.html">商店</a>
+                <a href="/feedback.html" style="color: var(--accent-light); font-weight: 700;">反馈</a>
+                <span class="nav-divider"></span>
+                <div class="theme-toggle" id="themeToggle" role="button" tabindex="0" aria-label="切换主题">
+                    <span class="toggle-track"><span class="toggle-thumb"></span></span>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- 英雄区 -->
+    <section class="hero">
+        <div class="container">
+            <h1>💬 <span class="highlight">发送反馈</span></h1>
+            <p>您的每一条建议，都是我们改进的动力</p>
+        </div>
+    </section>
+
+    <!-- 反馈表单 -->
+    <div class="container">
+        <div class="feedback-wrapper" id="feedbackWrapper">
+            <form id="feedbackForm">
+                <div class="form-group">
+                    <label for="feedbackType">反馈类型 <span class="required">*</span></label>
+                    <select id="feedbackType" name="type" required>
+                        <option value="" disabled selected>请选择反馈类型</option>
+                        <option value="插件Bug 反馈">插件 Bug 反馈</option>
+                        <option value="插件功能建议">插件功能建议</option>
+                        <option value="Wiki有误">Wiki有误</option>
+                        <option value="合作咨询">合作咨询</option>
+                        <option value="其他">其他</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="feedbackName">您的称呼</label>
+                    <input type="text" id="feedbackName" name="name" placeholder="怎么称呼您？">
+                </div>
+
+                <div class="form-group">
+                    <label for="feedbackEmail">联系邮箱</label>
+                    <input type="email" id="feedbackEmail" name="email" placeholder="便于我们回复您">
+                </div>
+
+                <div class="form-group">
+                    <label for="feedbackMessage">具体内容 <span class="required">*</span></label>
+                    <textarea id="feedbackMessage" name="message" placeholder="请详细描述您遇到的问题或建议..." required></textarea>
+                </div>
+
+                <button type="submit" class="btn-submit" id="submitBtn">提交反馈</button>
+            </form>
+        </div>
+
+        <!-- 提交成功后的展示（默认隐藏） -->
+        <div class="feedback-wrapper success-overlay" id="successOverlay">
+            <div class="success-icon">🎉</div>
+            <h2 class="success-title">反馈提交成功！</h2>
+            <p class="success-desc">感谢您的宝贵意见，我们会尽快查看并处理。</p>
+            <a href="/" class="btn-back">← 返回首页</a>
+        </div>
+    </div>
+
+    <footer class="footer">
+        <div class="container">
+            <p>Made with <span class="heart">❤️</span> by IceCloud &amp; Plux Dev</p>
+        </div>
+    </footer>
+
+    <script>
+        (function() {
+            // ---------- 主题切换 ----------
+            const themeToggle = document.getElementById('themeToggle');
+            const html = document.documentElement;
+            html.setAttribute('data-theme', localStorage.getItem('theme') || 'dark');
+
+            themeToggle.addEventListener('click', () => {
+                const next = html.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+                html.setAttribute('data-theme', next);
+                localStorage.setItem('theme', next);
+            });
+            themeToggle.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); themeToggle.click(); }
+            });
+
+            // ---------- 导航栏滚动效果 ----------
+            const navbar = document.getElementById('navbar');
+            window.addEventListener('scroll', () => {
+                navbar.classList.toggle('scrolled', window.pageYOffset > 20);
+            });
+
+            // ---------- 表单提交 ----------
+            // ⚠️ 请将 YOUR_FORM_ID 替换为你的 Formspree ID（如 mrewroaw）
+            const FORM_ID = 'YOUR_FORM_ID';
+            const FORM_URL = `https://formspree.io/f/${FORM_ID}`;
+
+            const form = document.getElementById('feedbackForm');
+            const submitBtn = document.getElementById('submitBtn');
+            const feedbackWrapper = document.getElementById('feedbackWrapper');
+            const successOverlay = document.getElementById('successOverlay');
+
+            form.addEventListener('submit', async (e) => {
+                e.preventDefault();
+
+                // 简单校验
+                const type = document.getElementById('feedbackType').value;
+                const message = document.getElementById('feedbackMessage').value.trim();
+                if (!type || !message) {
+                    alert('请选择反馈类型并填写具体内容');
+                    return;
+                }
+
+                // 禁用按钮
+                submitBtn.disabled = true;
+                submitBtn.textContent = '提交中...';
+
+                // 构建 FormData
+                const formData = new FormData(form);
+                // 如果未配置 Formspree ID，模拟成功以便本地测试
+                if (FORM_ID === 'YOUR_FORM_ID') {
+                    console.warn('未配置 Formspree ID，模拟提交成功');
+                    setTimeout(() => {
+                        feedbackWrapper.style.display = 'none';
+                        successOverlay.classList.add('active');
+                    }, 800);
+                    return;
+                }
+
+                try {
+                    const response = await fetch(FORM_URL, {
+                        method: 'POST',
+                        body: formData,
+                        headers: { 'Accept': 'application/json' }
+                    });
+
+                    if (response.ok) {
+                        // 成功
+                        feedbackWrapper.style.display = 'none';
+                        successOverlay.classList.add('active');
+                    } else {
+                        const data = await response.json();
+                        alert('提交失败：' + (data.error || '请稍后重试'));
+                        submitBtn.disabled = false;
+                        submitBtn.textContent = '提交反馈';
+                    }
+                } catch (err) {
+                    alert('网络错误，请稍后重试');
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = '提交反馈';
+                }
+            });
+        })();
+    </script>
+</body>
+</html>
