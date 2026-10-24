@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GtPlux · 官网</title>
+    <title>GtPlux Dev · 专业 Minecraft 插件开发</title>
     <style>
         :root {
             --bg-primary: #0b0d15;
@@ -63,7 +63,7 @@
         [data-theme="light"] .navbar.scrolled { background: rgba(255,255,255,0.85); backdrop-filter: blur(var(--nav-blur)); }
         [data-theme="dark"] .navbar.scrolled { background: rgba(11,13,21,0.85); backdrop-filter: blur(var(--nav-blur)); }
         .navbar .container { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; }
-        .brand { font-size: 1.3rem; font-weight: 700; color: var(--text-primary); display: flex; align-items: center; gap: 8px; }
+        .brand { font-size: 1.3rem; font-weight: 800; color: var(--text-primary); display: flex; align-items: center; gap: 8px; }
         .brand .highlight { color: var(--accent-light); }
         .nav-links { display: flex; align-items: center; gap: 20px; font-size: 0.95rem; flex-wrap: wrap; }
         .nav-links a { color: var(--text-secondary); transition: color 0.2s; font-weight: 500; }
@@ -81,12 +81,20 @@
 
         .hero { padding: 120px 0 60px; min-height: 100vh; display: flex; align-items: center; position: relative; overflow: hidden; }
         .hero::before { content: ''; position: absolute; top: -30%; right: -10%; width: 70%; height: 80%; background: radial-gradient(circle, rgba(124,58,237,0.15) 0%, transparent 70%); pointer-events: none; z-index: 0; }
-        .hero .container { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; align-items: center; position: relative; z-index: 1; }
+        .hero .container { display: grid; grid-template-columns: 1.2fr 0.8fr; gap: 40px; align-items: center; position: relative; z-index: 1; }
         .hero-left { display: flex; flex-direction: column; gap: 16px; }
         .hero-title { font-size: 4rem; font-weight: 800; line-height: 1.1; }
         .hero-title .highlight { background: var(--accent-gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
         .hero-sub { font-size: 1.4rem; font-weight: 600; color: var(--text-secondary); }
-        .hero-desc { font-size: 1.1rem; color: var(--text-secondary); max-width: 460px; }
+        
+        /* 介绍框样式 */
+        .hero-desc {
+            font-size: 1.05rem; color: var(--text-secondary); line-height: 1.8; max-width: 600px;
+            padding: 20px; background: var(--bg-card); border-radius: 16px; border: 1px solid var(--border-color);
+            margin-top: 8px;
+        }
+        .hero-desc strong { color: var(--text-primary); }
+
         .hero-actions { display: flex; gap: 16px; margin-top: 8px; flex-wrap: wrap; }
         .btn-hero { padding: 14px 36px; border-radius: 40px; font-weight: 700; font-size: 1rem; transition: all 0.25s; display: inline-block; border: none; cursor: pointer; }
         .btn-hero-primary { background: var(--accent-gradient); color: #fff; box-shadow: 0 4px 24px rgba(124,58,237,0.35); }
@@ -94,7 +102,7 @@
         .btn-hero-secondary { background: var(--bg-card); color: var(--text-primary); border: 1px solid var(--border-color); }
         .btn-hero-secondary:hover { background: var(--border-color); }
         .hero-right { display: flex; justify-content: center; align-items: center; }
-        .hero-graphic { width: 100%; max-width: 400px; aspect-ratio: 1/1; background: radial-gradient(circle at 30% 30%, rgba(124,58,237,0.2), transparent 70%); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 8rem; opacity: 0.7; user-select: none; }
+        .hero-graphic { width: 100%; max-width: 350px; aspect-ratio: 1/1; background: radial-gradient(circle at 30% 30%, rgba(124,58,237,0.2), transparent 70%); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 8rem; opacity: 0.7; user-select: none; }
 
         .features-tag { padding: 40px 0 20px; }
         .features-tag .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 20px; }
@@ -119,12 +127,38 @@
         .footer { padding: 32px 0; border-top: 1px solid var(--border-color); text-align: center; color: var(--text-muted); font-size: 0.9rem; }
         .footer .heart { color: #ef4444; }
 
+        /* 公告弹窗样式 */
+        .announcement-modal {
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.6); backdrop-filter: blur(4px);
+            justify-content: center; align-items: center; z-index: 9999;
+        }
+        .announcement-modal.active { display: flex; animation: fadeIn 0.3s ease; }
+        .announcement-box {
+            background: var(--bg-secondary); border: 1px solid var(--border-color);
+            border-radius: 20px; padding: 32px; max-width: 450px; width: 90%;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+            position: relative;
+            transform: translateY(0); animation: slideUp 0.3s ease;
+        }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        .announcement-header { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
+        .announcement-icon { font-size: 2rem; }
+        .announcement-title { font-size: 1.4rem; font-weight: 800; color: var(--text-primary); }
+        .announcement-content { color: var(--text-secondary); font-size: 1rem; line-height: 1.7; margin-bottom: 24px; white-space: pre-wrap; }
+        .btn-announcement-close {
+            width: 100%; padding: 12px; border: none; border-radius: 30px;
+            background: var(--accent-gradient); color: #fff; font-weight: 700; cursor: pointer;
+            transition: all 0.2s;
+        }
+        .btn-announcement-close:hover { transform: scale(1.02); box-shadow: 0 4px 16px rgba(124,58,237,0.4); }
+
         @media (max-width: 992px) {
             .hero .container { grid-template-columns: 1fr; text-align: center; }
-            .hero-desc { margin: 0 auto; }
+            .hero-desc { margin: 8px auto 0; }
             .hero-actions { justify-content: center; }
-            .hero-right { order: -1; }
-            .hero-graphic { max-width: 200px; font-size: 4rem; }
+            .hero-right { display: none; }
             .hero-title { font-size: 2.8rem; }
         }
         @media (max-width: 768px) {
@@ -135,6 +169,7 @@
             .hero-sub { font-size: 1.1rem; }
             .features-tag .grid { grid-template-columns: repeat(2, 1fr); }
             .products-grid { grid-template-columns: 1fr; }
+            .hero-desc { font-size: 0.95rem; padding: 16px; }
         }
     </style>
 </head>
@@ -142,7 +177,8 @@
 
     <nav class="navbar" id="navbar">
         <div class="container">
-            <a href="/" class="brand"><span class="highlight">Gt</span>Plux</a>
+            <!-- 品牌名称修改为 GtPlux Dev -->
+            <a href="/" class="brand"><span class="highlight">GtPlux</span>&nbsp;Dev</a>
             <div class="nav-links">
                 <a href="/">首页</a>
                 <a href="#plugins">插件</a>
@@ -165,9 +201,14 @@
     <section class="hero">
         <div class="container">
             <div class="hero-left">
-                <h1 class="hero-title"><span class="highlight">GtPlux</span></h1>
-                <div class="hero-sub">Minecraft Java 插件系列</div>
-                <p class="hero-desc">强大、可配置且易于使用的插件系列，覆盖世界控制、粒子特效、特殊工具与服务器管理。</p>
+                <h1 class="hero-title"><span class="highlight">GtPlux Dev</span></h1>
+                <div class="hero-sub">专注实用、稳定、轻量的 Minecraft Java 插件</div>
+                
+                <!-- 新增的团队介绍 -->
+                <div class="hero-desc">
+                    <strong>GtPlux Dev</strong> 是一个专注于 Minecraft Java 版插件开发的开发者品牌/团队，由 <strong>Reationura（ya_xzer21145）</strong> 于 2026 年 2 月 1 日创办。其核心方向是开发实用、稳定、轻量的 Minecraft Java 插件，同时也会少量涉猎其他 Minecraft 相关内容。GtPlux Dev 致力于为服务器与玩家提供可靠的开发支持，并持续探索更多有趣、好用的 Minecraft 功能与工具。
+                </div>
+
                 <div class="hero-actions">
                     <a href="#plugins" class="btn-hero btn-hero-primary">浏览插件</a>
                     <a href="sponsor" class="btn-hero btn-hero-secondary">支持我们</a>
@@ -244,13 +285,28 @@
         <div class="container">
             <p>Made with <span class="heart">❤️</span> by GtPlux Dev</p>
             <p style="margin-top:4px; font-size:0.8rem;">
-                <a href="https://github.com/IcecloudPlux">GitHub</a> · <a href="https://discord.gg/BJS7KdSG">Discord</a> · <a href="https://qm.qq.com/q/Kfelqf0iEs">QQGroup</a> · <a href="sponsor">赞助我们</a>
+                <a href="https://github.com/Reationura/IceCloudPlux-Website">GitHub</a> · <a href="https://discord.gg/BJS7KdSG">Discord</a> · <a href="https://qm.qq.com/q/Kfelqf0iEs">QQGroup</a> · <a href="sponsor">赞助我们</a>
             </p>
         </div>
     </footer>
 
+    <!-- 公告弹窗 HTML -->
+    <div class="announcement-modal" id="announcementModal">
+        <div class="announcement-box">
+            <div class="announcement-header">
+                <div class="announcement-icon">📢</div>
+                <div class="announcement-title" id="noticeTitle">系统公告</div>
+            </div>
+            <div class="announcement-content" id="noticeContent">
+                欢迎来到 GtPlux Dev！
+            </div>
+            <button class="btn-announcement-close" onclick="closeAnnouncement()">我知道了</button>
+        </div>
+    </div>
+
     <script>
         (function() {
+            // 主题切换
             const toggle = document.getElementById('themeToggle');
             const html = document.documentElement;
             const currentTheme = localStorage.getItem('theme') || 'dark';
@@ -265,6 +321,7 @@
                 if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggle.click(); }
             });
 
+            // 导航栏滚动
             const navbar = document.getElementById('navbar');
             function handleScroll() {
                 if (window.pageYOffset > 20) navbar.classList.add('scrolled');
@@ -272,6 +329,57 @@
             }
             window.addEventListener('scroll', handleScroll, { passive: true });
             handleScroll();
+
+            // ================= 公告弹窗逻辑 =================
+            const modal = document.getElementById('announcementModal');
+            const titleEl = document.getElementById('noticeTitle');
+            const contentEl = document.getElementById('noticeContent');
+            const SESSION_KEY = 'gtplux_notice_shown';
+
+            window.closeAnnouncement = function() {
+                modal.classList.remove('active');
+                // 记录在 sessionStorage，同一会话内不重复弹出
+                sessionStorage.setItem(SESSION_KEY, 'true');
+            };
+
+            async function loadAnnouncement() {
+                // 如果本次会话已经弹过，则跳过
+                if (sessionStorage.getItem(SESSION_KEY)) return;
+
+                try {
+                    // 多源获取 notice.json（保证加载速度）
+                    const urls = [
+                        'https://fastly.jsdelivr.net/gh/Reationura/IceCloudPlux-Website@main/_data/notice.json',
+                        'https://gcore.jsdelivr.net/gh/Reationura/IceCloudPlux-Website@main/_data/notice.json',
+                        `_data/notice.json?_t=${Date.now()}`
+                    ];
+                    
+                    let data = null;
+                    for (const url of urls) {
+                        try {
+                            const res = await fetch(url, { cache: 'no-cache' });
+                            if (res.ok) {
+                                data = await res.json();
+                                break;
+                            }
+                        } catch (e) {
+                            continue;
+                        }
+                    }
+
+                    // 如果成功获取，并且开启了显示，且包含内容，则弹出
+                    if (data && data.show && data.content) {
+                        titleEl.textContent = data.title || '系统公告';
+                        contentEl.textContent = data.content;
+                        modal.classList.add('active');
+                    }
+                } catch (err) {
+                    console.warn('获取公告失败:', err);
+                }
+            }
+
+            // 页面加载后稍作延迟弹出，避免影响首屏渲染
+            setTimeout(loadAnnouncement, 800);
         })();
     </script>
 </body>
