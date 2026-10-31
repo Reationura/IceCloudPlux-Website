@@ -69,6 +69,7 @@
         <div class="tab-bar">
             <button class="tab-btn active" data-panel="products">📦 产品管理</button>
             <button class="tab-btn" data-panel="plugins">📁 插件管理</button>
+            <button class="tab-btn" data-panel="countdown">📅 倒数日管理</button>
             <button class="tab-btn" data-panel="notice">📢 公告管理</button>
         </div>
 
@@ -109,7 +110,23 @@
             </div>
         </div>
 
-        <!-- 面板3: 公告管理 -->
+        <!-- 面板3: 倒数日管理 (新增) -->
+        <div id="panel-countdown" class="panel">
+            <div class="action-bar">
+                <h2 style="font-size:1.3rem;">倒数日列表 <span class="source-badge" id="countdownSourceBadge"></span></h2>
+                <button class="btn btn-primary" onclick="openCountdownModal()">+ 添加倒数日</button>
+            </div>
+            <div class="card">
+                <div class="table-wrap">
+                    <table>
+                        <thead><tr><th>名称</th><th>目标日期</th><th>每年重复</th><th>操作</th></tr></thead>
+                        <tbody id="countdownTableBody"><tr><td colspan="4" class="table-loading"><div class="spinner"></div><div>切换到本页时加载…</div></td></tr></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- 面板4: 公告管理 -->
         <div id="panel-notice" class="panel">
             <div class="action-bar">
                 <h2 style="font-size:1.3rem;">公告设置 <span class="source-badge" id="noticeSourceBadge"></span></h2>
@@ -242,9 +259,12 @@
 
                 if (res.status === 404) {
                     if (source.type === 'api') {
-                        _dataCache[name] = { data: (name === 'notice' ? {} : []), time: now, sha: null, source: '空文件' };
+                        // 对不同文件类型提供默认空值
+                        let defaultData = [];
+                        if (name === 'notice') defaultData = {};
+                        _dataCache[name] = { data: defaultData, time: now, sha: null, source: '空文件' };
                         updateSourceBadge(name, '空文件');
-                        return _dataCache[name].data;
+                        return defaultData;
                     }
                     continue;
                 }
@@ -281,7 +301,8 @@
             'icecloud_plugins': 'pluginSourceBadge',
             'plux_plugins': 'pluginSourceBadge',
             'special_plugins': 'pluginSourceBadge',
-            'notice': 'noticeSourceBadge'
+            'notice': 'noticeSourceBadge',
+            'countdown': 'countdownSourceBadge'
         };
         const el = document.getElementById(map[name]);
         if (el) el.textContent = sourceName ? `来源: ${sourceName}` : '';
@@ -357,7 +378,8 @@
     let pluginsData = [];
     let currentPluginFile = 'icecloud_plugins';
     let noticeData = {};
-    const loaded = { products: false, plugins: {}, notice: false };
+    let countdownData = [];
+    const loaded = { products: false, plugins: {}, notice: false, countdown: false };
 
     initTheme();
     initNavbarScroll();
@@ -392,7 +414,7 @@
         if (confirm('确定退出登录吗？')) {
             clearToken(); token = '';
             for (const key in _dataCache) delete _dataCache[key];
-            loaded.products = false; loaded.plugins = {}; loaded.notice = false;
+            loaded.products = false; loaded.plugins = {}; loaded.notice = false; loaded.countdown = false;
             document.getElementById('loginSection').style.display = 'flex';
             document.getElementById('adminSection').style.display = 'none';
             document.getElementById('tokenInput').value = '';
@@ -422,6 +444,7 @@
 
             if (panel === 'products') loadProductsIfNeeded();
             else if (panel === 'plugins') loadPluginsIfNeeded();
+            else if (panel === 'countdown') loadCountdownIfNeeded();
             else if (panel === 'notice') loadNoticeIfNeeded();
         });
     });
@@ -465,6 +488,19 @@
         }
     }
 
+    async function loadCountdownIfNeeded(force = false) {
+        if (loaded.countdown && !force) return;
+        const tbody = document.getElementById('countdownTableBody');
+        tbody.innerHTML = `<tr><td colspan="4" class="table-loading"><div class="spinner"></div><div>加载中…</div></td></tr>`;
+        try {
+            countdownData = await loadData('countdown', token, force);
+            loaded.countdown = true;
+            renderCountdownTable();
+        } catch (err) {
+            tbody.innerHTML = `<tr><td colspan="4" class="table-error">加载失败：${escapeHtml(err.message)} <button onclick="loadCountdownIfNeeded(true)">重试</button></td></tr>`;
+        }
+    }
+
     async function loadNoticeIfNeeded(force = false) {
         if (loaded.notice && !force) return;
         try {
@@ -480,11 +516,12 @@
         const activePanel = document.querySelector('.tab-btn.active').dataset.panel;
         if (activePanel === 'products') await loadProductsIfNeeded(true);
         else if (activePanel === 'plugins') await loadPluginsIfNeeded(true);
+        else if (activePanel === 'countdown') await loadCountdownIfNeeded(true);
         else if (activePanel === 'notice') await loadNoticeIfNeeded(true);
     }
 
     /* ============================================================
-       渲染表格 & 公告表单
+       渲染表格 & 公告表单 & 倒数日
        ============================================================ */
     function renderProductTable() {
         const tbody = document.getElementById('productTableBody');
@@ -518,6 +555,27 @@
                 <td>
                     <button class="btn btn-secondary btn-sm" onclick="editPlugin(${idx})">编辑</button>
                     <button class="btn btn-danger btn-sm" onclick="deletePlugin(${idx})">删除</button>
+                </td>
+            </tr>
+        `).join('');
+    }
+
+    function renderCountdownTable() {
+        const tbody = document.getElementById('countdownTableBody');
+        if (!countdownData || countdownData.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; color:var(--text-muted);">暂无倒数日</td></tr>`;
+            return;
+        }
+        // 简单排个序
+        countdownData.sort((a, b) => new Date(a.date) - new Date(b.date));
+        tbody.innerHTML = countdownData.map((c, idx) => `
+            <tr>
+                <td>${escapeHtml(c.name)}</td>
+                <td>${escapeHtml(c.date)}</td>
+                <td>${c.yearly ? '是' : '否'}</td>
+                <td>
+                    <button class="btn btn-secondary btn-sm" onclick="editCountdown(${idx})">编辑</button>
+                    <button class="btn btn-danger btn-sm" onclick="deleteCountdown(${idx})">删除</button>
                 </td>
             </tr>
         `).join('');
@@ -651,6 +709,64 @@
     }
 
     /* ============================================================
+       倒数日 CRUD (新增)
+       ============================================================ */
+    function openCountdownModal(index) {
+        const isEdit = index !== undefined;
+        const c = isEdit ? countdownData[index] : {};
+        document.getElementById('modalTitle').textContent = isEdit ? '编辑倒数日' : '添加倒数日';
+        document.getElementById('modalBody').innerHTML = `
+            <form id="countdownForm">
+                <input type="hidden" id="countdownIndex" value="${isEdit ? index : ''}">
+                <div class="form-row">
+                    <div class="form-group"><label>节日 / 纪念日名称 *</label><input type="text" id="cdName" value="${escapeHtml(c.name || '')}" placeholder="例如：春节、生日" required></div>
+                    <div class="form-group"><label>目标日期 *</label><input type="date" id="cdDate" value="${c.date || ''}" required></div>
+                </div>
+                <div class="form-group" style="margin-top: 10px;">
+                    <label style="display:flex; align-items:center; gap:8px; cursor:pointer;">
+                        <input type="checkbox" id="cdYearly" ${c.yearly ? 'checked' : ''} style="width:auto; margin:0;">
+                        <span>每年重复（如生日、纪念日等）</span>
+                    </label>
+                </div>
+                <div class="modal-actions" style="margin-top: 20px;">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal()">取消</button>
+                    <button type="submit" class="btn btn-primary">保存</button>
+                </div>
+            </form>
+        `;
+        openModal();
+        document.getElementById('countdownForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const idx = document.getElementById('countdownIndex').value;
+            const newCountdown = {
+                id: isEdit ? c.id : (Date.now().toString(36) + Math.random().toString(36).slice(2)),
+                name: document.getElementById('cdName').value.trim(),
+                date: document.getElementById('cdDate').value,
+                yearly: document.getElementById('cdYearly').checked
+            };
+            if (idx === '') countdownData.push(newCountdown);
+            else countdownData[parseInt(idx)] = newCountdown;
+            
+            const submitBtn = this.querySelector('button[type="submit"]');
+            submitBtn.disabled = true; submitBtn.textContent = '保存中…';
+            try {
+                await saveData('countdown', countdownData, token, '更新倒数日列表');
+                renderCountdownTable(); closeModal();
+            } catch (err) {
+                alert('保存失败：' + err.message);
+                submitBtn.disabled = false; submitBtn.textContent = '保存';
+            }
+        });
+    }
+    function editCountdown(index) { openCountdownModal(index); }
+    async function deleteCountdown(index) {
+        if (!confirm('确定删除该倒数日吗？')) return;
+        countdownData.splice(index, 1);
+        try { await saveData('countdown', countdownData, token, '删除倒数日'); renderCountdownTable(); }
+        catch (err) { alert('删除失败：' + err.message); loadCountdownIfNeeded(true); }
+    }
+
+    /* ============================================================
        公告保存
        ============================================================ */
     document.getElementById('noticeForm').addEventListener('submit', async function(e) {
@@ -682,9 +798,10 @@
 
     // 暴露全局
     window.login = login; window.logout = logout; window.refreshAll = refreshAll;
-    window.loadProductsIfNeeded = loadProductsIfNeeded; window.loadPluginsIfNeeded = loadPluginsIfNeeded;
+    window.loadProductsIfNeeded = loadProductsIfNeeded; window.loadPluginsIfNeeded = loadPluginsIfNeeded; window.loadCountdownIfNeeded = loadCountdownIfNeeded;
     window.openProductModal = openProductModal; window.editProduct = editProduct; window.deleteProduct = deleteProduct;
     window.openPluginModal = openPluginModal; window.editPlugin = editPlugin; window.deletePlugin = deletePlugin;
+    window.openCountdownModal = openCountdownModal; window.editCountdown = editCountdown; window.deleteCountdown = deleteCountdown;
     window.closeModal = closeModal;
     </script>
 </body>
